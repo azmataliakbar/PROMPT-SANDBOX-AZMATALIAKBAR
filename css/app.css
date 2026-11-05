@@ -6,6 +6,7 @@
 :root {
   --footer-h: 30px;
   --tabbar-h: 0px;
+  --badge-h: 0px;             /* phones: 64px, for Netlify badge */
   --radius: 16px;
   --bg: #0b0b16;
   --text: #f2f2fa;
@@ -24,6 +25,13 @@
 [data-layout="mobile"] {
   --tabbar-h: 56px;
 }
+
+/* Netlify's free-plan badge sits at the bottom-right of phone screens (about 64px tall).
+   Lift the tab bar and footer above it on phones so they never cover the badge or get covered by it. */
+[data-layout="mobile"] {
+  --badge-h: 64px;
+}
+
 
 *,
 *::before,
@@ -47,7 +55,7 @@ body {
     radial-gradient(700px 500px at 50% 120%, rgba(0, 245, 160, 0.14), transparent 60%);
   background-attachment: fixed;
   font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  padding-bottom: calc(var(--footer-h) + var(--tabbar-h) + 24px);
+  padding-bottom: calc(var(--footer-h) + var(--tabbar-h) + var(--badge-h) + 24px);
 }
 
 h1, h2, h3 {
@@ -484,7 +492,7 @@ input[type="number"] {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: var(--tabbar-h);
+  bottom: calc(var(--tabbar-h) + var(--badge-h));
   z-index: 4;
   height: var(--footer-h);
   display: flex;
@@ -514,7 +522,7 @@ input[type="number"] {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--badge-h);
   z-index: 6;
   height: var(--tabbar-h);
   display: flex;
