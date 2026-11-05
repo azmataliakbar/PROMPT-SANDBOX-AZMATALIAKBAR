@@ -23,7 +23,7 @@
   };
 
   var library = Sandbox.templates.create({ namespace: cfg.namespace, max: cfg.customTemplatesMax });
-  var log = Sandbox.log.create({ max: cfg.logMax });
+  var log = Sandbox.log.create();
   var registry = Sandbox.tools.createRegistry();
   Sandbox.tools.install(registry, {
     templates: library,
@@ -102,32 +102,104 @@
       : "Type something on the Compose tab to see it placed into the template.";
   }
 
-  // ---------- Log ----------
-  function renderLog() {
+  // ---------- Security log and metrics ----------
+  function renderSecurity() {
+    var m = log.metrics();
+    $("m-total").textContent = m.total;
+    $("m-safe").textContent = m.safe;
+    $("m-flagged").textContent = m.flagged;
+    $("m-stopped").textContent = m.stopped;
+    $("m-tokens").textContent = m.tokens.toLocaleString();
+
+    $("log-toggle").checked = log.isEnabled();
+    $("log-state").textContent = log.isEnabled()
+      ? "Recording is on. Short excerpts stay in this browser for 30 days."
+      : "Recording is off. New runs are not saved.";
+
     var entries = log.list();
     var box = $("log-list");
     box.textContent = "";
     if (!entries.length) {
       box.appendChild(V.el("li", "empty", "No runs yet."));
-      return;
     }
     entries.forEach(function (e) {
-      var li = V.el("li", "log-item status-" + (e.status === "ok" ? "ok" : e.status === "error" ? "error" : "idle"));
+      var flagged = e.signals.length > 0;
+      var li = V.el("li", "log-item result-" + e.status + (flagged ? " is-flagged" : ""));
       var head = V.el("div", "log-head");
-      head.appendChild(V.el("span", "log-status", e.status));
+      head.appendChild(V.el("span", "log-status", flagged && e.status === "ok" ? "flagged" : e.status));
       head.appendChild(V.el("span", "log-time", new Date(e.time).toLocaleTimeString()));
       li.appendChild(head);
-      li.appendChild(V.el("div", "log-template", e.template + (e.simulated ? " · simulated" : "")));
-      if (e.preview) li.appendChild(V.el("div", "log-preview", e.preview));
+      li.appendChild(V.el("div", "log-template", e.template + (e.audience ? " · " + e.audience : "")));
+      if (flagged) {
+        var chips = V.el("div", "signal-chips");
+        e.signals.forEach(function (id) { chips.appendChild(V.el("span", "signal-chip", Sandbox.scanner.labelOf(id))); });
+        li.appendChild(chips);
+      }
+      if (e.excerpt) li.appendChild(V.el("div", "log-preview", "“" + e.excerpt + "”"));
       box.appendChild(li);
     });
+    $("download-csv").disabled = !entries.length;
   }
+
+  // Local date and time as YYYYMMDD-HHMM, for file names.
+  function stampNow() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "-" + p(d.getHours()) + p(d.getMinutes());
+  }
+
+  function downloadText(text, name, type) {
+    var blob = new Blob([text], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  $("download-csv").addEventListener("click", function () {
+    registry.call("security.csv").then(function (text) {
+      downloadText(text, "security-summary-" + stampNow() + ".csv", "text/csv;charset=utf-8");
+    });
+  });
+
+  $("log-toggle").addEventListener("change", function (e) {
+    registry.call("security.setEnabled", { enabled: e.target.checked }).then(renderSecurity);
+  });
 
   function renderAll() {
     renderTemplates();
     renderCompose();
     renderPreview();
-    renderLog();
+    renderSecurity();
+  }
+
+  // Typing refreshes the compose and preview panels at most every 100 ms. The first change in
+  // a pause renders at once, and quick follow-up keystrokes share one trailing render.
+  var lastLive = 0;
+  var liveTimer = 0;
+  function renderLive() {
+    lastLive = Date.now();
+    renderCompose();
+    renderPreview();
+  }
+  function scheduleLive() {
+    var wait = 100 - (Date.now() - lastLive);
+    if (wait <= 0) {
+      clearTimeout(liveTimer);
+      liveTimer = 0;
+      renderLive();
+      return;
+    }
+    if (!liveTimer) {
+      liveTimer = setTimeout(function () {
+        liveTimer = 0;
+        renderLive();
+      }, wait);
+    }
   }
 
   // ---------- Age groups and question tips ----------
@@ -272,7 +344,7 @@
     state.input = e.target.value;
     state.status = state.running ? "running" : "idle";
     if (!state.running) state.message = "";
-    renderAll();
+    scheduleLive();
   });
 
   // ---------- Template selection and actions ----------
@@ -284,7 +356,8 @@
   });
 
   $("clear-log").addEventListener("click", function () {
-    registry.call("log.clear").then(renderLog);
+    if (!window.confirm("Clear the whole security log? This cannot be undone.")) return;
+    registry.call("log.clear").then(renderSecurity);
   });
 
   // ---------- Template creator ----------

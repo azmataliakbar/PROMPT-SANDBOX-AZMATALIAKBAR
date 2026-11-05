@@ -659,3 +659,135 @@ input[type="number"] {
 .creator select option {
   background: #14142a;
 }
+
+/* ---------- Security panel: metrics, switch, live log, export ---------- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.metric {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  min-width: 0;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--idle);
+  text-shadow: 0 0 12px currentColor;
+  overflow-wrap: anywhere;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.metric.safe .metric-value { color: var(--ok); }
+.metric.flag .metric-value { color: var(--error); }
+.metric.tokens .metric-value { color: var(--warm); }
+
+.log-controls {
+  display: grid;
+  gap: 6px;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.switch input {
+  appearance: none;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex: 0 0 auto;
+}
+
+.switch input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text);
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked {
+  background: var(--ok);
+  box-shadow: 0 0 12px rgba(0, 245, 160, 0.55);
+}
+
+.switch input:checked::after {
+  transform: translateX(18px);
+  background: #0b0b16;
+}
+
+.btn.csv {
+  width: 100%;
+  background: linear-gradient(120deg, var(--ok), var(--idle));
+  box-shadow: 0 0 18px rgba(0, 245, 160, 0.4);
+  color: #0b0b16;
+}
+
+.log-list.scroll {
+  max-height: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.log-item.result-ok { border-left-color: var(--ok); }
+.log-item.result-stopped { border-left-color: var(--warm); }
+.log-item.result-error { border-left-color: var(--error); }
+
+.log-item.is-flagged {
+  border-color: rgba(255, 77, 141, 0.55);
+  box-shadow: 0 0 14px rgba(255, 77, 141, 0.25);
+}
+
+.signal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.signal-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--error);
+  border: 1px solid var(--error);
+  box-shadow: 0 0 8px rgba(255, 77, 141, 0.35);
+}
+
+/* Wide screens: the metric cards sit in one row */
+[data-layout="tablet"] .metrics,
+[data-layout="desktop"] .metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 300px) {
+  .metric-value { font-size: 18px; }
+}

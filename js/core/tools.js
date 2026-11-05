@@ -43,6 +43,18 @@
     };
   }
 
+  // One security-log entry for a run. The input is passed to the log, which keeps only an excerpt.
+  function logEntry(t, args, clean, status) {
+    return {
+      template: t.name,
+      audience: args.audience,
+      status: status,
+      input: clean,
+      signals: Sandbox.scanner.scan(clean).categories,
+      tokens: Sandbox.prompt.metrics(t, clean, args.audience).tokens
+    };
+  }
+
   // ctx: { templates, prompt, provider, log }
   function install(registry, ctx) {
     var T = ctx.templates;
@@ -139,14 +151,11 @@
         var clean = ctx.prompt.checkInput(a.input).text;
         var payload = ctx.prompt.buildPayload(t, clean, a.audience);
         return ctx.provider.run(payload, { signal: a.signal, onChunk: a.onChunk }).then(function (result) {
-          ctx.log.add({ template: t.name, status: "ok", ms: result.ms, simulated: true, preview: result.text.slice(0, 80) });
+          ctx.log.add(logEntry(t, a, clean, "ok"));
           return result;
         }, function (err) {
-          if (err && err.name === "AbortError") {
-            ctx.log.add({ template: t.name, status: "stopped", ms: 0, simulated: true, preview: "" });
-          } else {
-            ctx.log.add({ template: t.name, status: "error", ms: 0, simulated: true, preview: err.message });
-          }
+          var status = err && err.name === "AbortError" ? "stopped" : "error";
+          ctx.log.add(logEntry(t, a, clean, status));
           throw err;
         });
       }
@@ -168,6 +177,27 @@
       description: "Friendly tips for a student's question",
       input: { text: { type: "string", required: true } },
       run: function (a) { return Sandbox.tips.analyze(a.text); }
+    });
+
+    registry.register("security.metrics", {
+      description: "Counts for prompts run, safe, flagged, stopped and tokens",
+      input: {},
+      run: function () { return ctx.log.metrics(); }
+    });
+
+    registry.register("security.csv", {
+      description: "Spreadsheet summary of the security log (CSV text)",
+      input: {},
+      run: function () { return ctx.log.csv(); }
+    });
+
+    registry.register("security.setEnabled", {
+      description: "Turn recording on or off",
+      input: { enabled: { type: "boolean", required: true } },
+      run: function (a) {
+        ctx.log.setEnabled(a.enabled);
+        return { enabled: ctx.log.isEnabled() };
+      }
     });
 
     registry.register("log.list", {

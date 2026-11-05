@@ -8,9 +8,11 @@ An interactive classroom sandbox that shows how a teacher's template and a stude
 - **Question tips:** friendly suggestions for asking a better question, such as adding detail or saying what you want.
 - **Compose:** type a topic, see the length and token meters, and run the prompt
 - **Preview:** the template with the student's words highlighted where they land, and the payload as two role-separated messages
-- **Run log:** a visible history of runs, including errors and stops
+- **Security log:** every run is recorded with a short excerpt (80 characters), the signals found, the result and an estimated token count. Metric cards show prompts run, safe prompts, flagged attempts and tokens. Recording can be switched off. Entries older than 30 days are removed.
+- **Spreadsheet summary:** one click downloads the log as a CSV file that opens in Excel or Google Sheets. Cells that could run as formulas are neutralised.
+- **Scanner:** rule-override phrases are grouped into seven categories, for example developer mode, DAN-style jailbreaks, system override and persona swaps. Safe everyday phrases are tested so they are not flagged.
 - **Template creator:** save custom templates in this browser, with export and import as JSON
-- **Responsive:** from 270px up to large laptops. On phones, four tabs at the bottom: Templates, Compose, Preview and Log
+- **Responsive:** from 270px up to large laptops. On phones, four tabs at the bottom: Templates, Compose, Preview and Security
 - **Watermark:** "Idea By: Azmat Ali" fixed at the bottom
 
 ## Run locally

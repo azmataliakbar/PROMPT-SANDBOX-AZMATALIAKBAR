@@ -9,16 +9,6 @@
   var CONTROL_G = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
   var CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 
-  // Phrases that try to override a teacher's rules. Used to flag and explain, not to block.
-  var INJECTION = [
-    /ignore (all |the |any )?(previous|above|prior) (instructions|rules|messages)/i,
-    /disregard (all |the |any )?(previous|above|prior)/i,
-    /(reveal|show|print|repeat) (your|the) (system )?(prompt|instructions|rules)/i,
-    /you are now/i,
-    /system prompt/i,
-    /act as (an? )?(unrestricted|jailbroken|developer mode)/i
-  ];
-
   function placeholderCount(template) {
     return String(template).split(PH).length - 1;
   }
@@ -46,10 +36,9 @@
     };
   }
 
+  // Number of rule-override categories found (see js/core/scanner.js).
   function injectionHits(text) {
-    var n = 0;
-    INJECTION.forEach(function (re) { if (re.test(text)) n += 1; });
-    return n;
+    return Sandbox.scanner.scan(text).categories.length;
   }
 
   // Returns a list of problems. An empty list means the template is valid.

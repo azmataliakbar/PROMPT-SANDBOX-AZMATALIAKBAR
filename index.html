@@ -32,7 +32,7 @@
     <button type="button" role="tab" data-target="templates" aria-selected="false">Templates</button>
     <button type="button" role="tab" data-target="compose" aria-selected="true">Compose</button>
     <button type="button" role="tab" data-target="preview" aria-selected="false">Preview</button>
-    <button type="button" role="tab" data-target="log" aria-selected="false">Log</button>
+    <button type="button" role="tab" data-target="log" aria-selected="false">Security</button>
   </nav>
 
   <main class="workspace">
@@ -107,13 +107,32 @@
       <p class="muted small">Token counts are rough estimates (about four characters per token).</p>
     </section>
 
-    <!-- Log -->
+    <!-- Security: metrics, live log and spreadsheet export -->
     <section class="panel sec-log glass" data-section="log" aria-labelledby="h-log">
       <div class="panel-head">
-        <h2 id="h-log">Run log</h2>
+        <h2 id="h-log">Security log</h2>
         <button type="button" class="btn ghost small" id="clear-log">Clear</button>
       </div>
-      <ul class="log-list" id="log-list"></ul>
+
+      <div class="metrics" role="list" aria-label="Activity counts">
+        <div class="metric" role="listitem"><span class="metric-value" id="m-total">0</span><span class="metric-label">Prompts run</span></div>
+        <div class="metric safe" role="listitem"><span class="metric-value" id="m-safe">0</span><span class="metric-label">Safe prompts</span></div>
+        <div class="metric flag" role="listitem"><span class="metric-value" id="m-flagged">0</span><span class="metric-label">Flagged attempts</span></div>
+        <div class="metric" role="listitem"><span class="metric-value" id="m-stopped">0</span><span class="metric-label">Stopped</span></div>
+        <div class="metric tokens" role="listitem"><span class="metric-value" id="m-tokens">0</span><span class="metric-label">Est. tokens</span></div>
+      </div>
+
+      <div class="log-controls">
+        <label class="switch">
+          <input type="checkbox" id="log-toggle" checked>
+          <span>Record activity</span>
+        </label>
+        <p class="muted small" id="log-state" role="status"></p>
+      </div>
+
+      <button type="button" class="btn neon csv" id="download-csv" disabled>Download spreadsheet summary (CSV)</button>
+
+      <ul class="log-list scroll" id="log-list" aria-live="polite" aria-label="Security log, newest first"></ul>
     </section>
 
   </main>
@@ -191,6 +210,7 @@
   <!-- Classic scripts in dependency order (opens from file:// with no server) -->
   <script src="js/config.js"></script>
   <script src="js/util/storage.js"></script>
+  <script src="js/core/scanner.js"></script>
   <script src="js/core/prompt.js"></script>
   <script src="js/core/templates.js"></script>
   <script src="js/core/simulator.js"></script>
