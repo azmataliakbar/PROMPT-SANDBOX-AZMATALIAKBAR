@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-layout="desktop">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Prompt Sandbox: see how a template and a student's words combine into a prompt. Simulated model, no data leaves the browser.">
+  <meta name="theme-color" content="#0b0b16">
+  <title>Prompt Sandbox</title>
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Prompt Sandbox">
+  <meta property="og:description" content="See how a template and a student's words combine into a prompt.">
+  <meta name="twitter:card" content="summary">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">&#10070;</span>
+      <div>
+        <h1>Prompt Sandbox</h1>
+        <p class="tag" id="mode-badge">Simulated model</p>
+      </div>
+    </div>
+    <button type="button" class="btn neon small" id="new-template">+ New template</button>
+  </header>
+
+  <nav class="tabbar" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" data-target="templates" aria-selected="false">Templates</button>
+    <button type="button" role="tab" data-target="compose" aria-selected="true">Compose</button>
+    <button type="button" role="tab" data-target="preview" aria-selected="false">Preview</button>
+    <button type="button" role="tab" data-target="log" aria-selected="false">Log</button>
+  </nav>
+
+  <main class="workspace">
+
+    <!-- Templates -->
+    <section class="panel sec-templates glass" data-section="templates" aria-labelledby="h-templates">
+      <div class="panel-head">
+        <h2 id="h-templates">Templates</h2>
+        <span class="muted" id="template-count"></span>
+      </div>
+      <div class="template-list" id="template-list"></div>
+      <div class="template-actions">
+        <button type="button" class="btn ghost small" id="copy-template">Copy</button>
+        <button type="button" class="btn ghost small" id="edit-template">Edit</button>
+        <button type="button" class="btn ghost small danger" id="delete-template">Delete</button>
+      </div>
+      <pre class="template-detail" id="template-detail" aria-label="Selected template text"></pre>
+      <div class="library-tools">
+        <button type="button" class="btn ghost small" id="export-templates">Export custom</button>
+        <button type="button" class="btn ghost small" id="import-templates">Import</button>
+        <input type="file" id="import-file" accept="application/json" hidden>
+      </div>
+      <p class="muted small" id="template-message" role="status"></p>
+    </section>
+
+    <!-- Compose -->
+    <section class="panel sec-compose" data-section="compose" aria-labelledby="h-compose">
+      <div class="run-card glass" id="run-card">
+        <div class="panel-head">
+          <h2 id="h-compose">Compose</h2>
+          <span class="token-count" id="token-count" aria-live="polite">~0 tokens</span>
+        </div>
+        <label class="field">
+          <span>Student input <span class="muted" id="char-count"></span></span>
+          <textarea id="input" rows="4" maxlength="500" placeholder="Type a topic, for example: the moon"></textarea>
+        </label>
+        <div class="meters" id="meters"></div>
+        <p class="chip warn" id="chip-injection" hidden>Contains a rule-override phrase</p>
+        <p class="muted small" id="compose-notes"></p>
+        <div class="run-actions">
+          <button type="button" class="btn neon" id="run" disabled>Run prompt</button>
+          <button type="button" class="btn ghost" id="stop" disabled>Stop</button>
+        </div>
+        <p class="run-message" id="run-message" role="status" aria-live="polite"></p>
+        <h3 class="sub">Reply</h3>
+        <div class="output glass" id="output" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="panel sec-preview glass" data-section="preview" aria-labelledby="h-preview">
+      <div class="panel-head">
+        <h2 id="h-preview">Preview</h2>
+      </div>
+      <p class="muted small" id="viewer-note"></p>
+      <div class="viewer" id="viewer-template" aria-label="Template with the student's text in place"></div>
+      <h3 class="sub">Payload</h3>
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead>
+            <tr><th scope="col">Role</th><th scope="col">Content</th><th scope="col">Chars</th><th scope="col">Tokens</th></tr>
+          </thead>
+          <tbody id="matrix-body"></tbody>
+        </table>
+      </div>
+      <p class="muted small">Token counts are rough estimates (about four characters per token).</p>
+    </section>
+
+    <!-- Log -->
+    <section class="panel sec-log glass" data-section="log" aria-labelledby="h-log">
+      <div class="panel-head">
+        <h2 id="h-log">Run log</h2>
+        <button type="button" class="btn ghost small" id="clear-log">Clear</button>
+      </div>
+      <ul class="log-list" id="log-list"></ul>
+    </section>
+
+  </main>
+
+  <!-- Template creator -->
+  <dialog class="creator glass" id="creator" aria-labelledby="creator-title">
+    <form id="creator-form" method="dialog">
+      <h2 id="creator-title">New template</h2>
+      <label class="field">
+        <span>Name</span>
+        <input id="c-name" type="text" maxlength="60" required>
+      </label>
+      <label class="field">
+        <span>Description (optional)</span>
+        <input id="c-desc" type="text" maxlength="200">
+      </label>
+      <label class="field">
+        <span>Template instructions</span>
+        <textarea id="c-template" rows="4" maxlength="2000" required></textarea>
+        <small class="hint" id="c-hint" role="status"></small>
+      </label>
+      <label class="field">
+        <span>Input limit (characters, optional)</span>
+        <input id="c-limit" type="number" min="1" max="500" inputmode="numeric">
+      </label>
+      <p class="error" id="creator-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="creator-cancel">Cancel</button>
+        <button type="submit" class="btn neon">Save template</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <span class="watermark">Idea By: Azmat Ali</span>
+  </footer>
+
+  <!-- Classic scripts in dependency order (opens from file:// with no server) -->
+  <script src="js/config.js"></script>
+  <script src="js/util/storage.js"></script>
+  <script src="js/core/prompt.js"></script>
+  <script src="js/core/templates.js"></script>
+  <script src="js/core/simulator.js"></script>
+  <script src="js/core/provider.js"></script>
+  <script src="js/core/log.js"></script>
+  <script src="js/core/tools.js"></script>
+  <script src="js/ui/viewer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
