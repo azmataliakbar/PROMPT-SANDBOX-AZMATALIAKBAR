@@ -17,6 +17,16 @@
     tokenCharsPerToken: 4,    // rough estimate only, shown as "about"
     streamDelayMs: 60,        // delay between streamed words
 
+    // Age groups. "level" goes into the system rules; "opener" starts the simulated reply.
+    audiences: [
+      { id: "little", label: "Ages 4-6", level: "very simple words, short sentences, warm and friendly", opener: "Hi friend! " },
+      { id: "kids", label: "Ages 7-10", level: "simple words, clear sentences, encouraging tone", opener: "Hello! " },
+      { id: "teens", label: "Ages 11-15", level: "clear and engaging, age-appropriate, no slang", opener: "" },
+      { id: "older", label: "Ages 16-18", level: "clear, concise and well organised", opener: "" },
+      { id: "adult", label: "Adults", level: "precise and professional", opener: "In brief: " }
+    ],
+    defaultAudience: "kids",
+
     builtins: [
       {
         id: "haiku",

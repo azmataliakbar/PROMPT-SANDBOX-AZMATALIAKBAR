@@ -49,6 +49,7 @@
         <button type="button" class="btn ghost small" id="edit-template">Edit</button>
         <button type="button" class="btn ghost small danger" id="delete-template">Delete</button>
       </div>
+      <button type="button" class="btn neon small" id="open-designer">Prompt designer</button>
       <pre class="template-detail" id="template-detail" aria-label="Selected template text"></pre>
       <div class="library-tools">
         <button type="button" class="btn ghost small" id="export-templates">Export custom</button>
@@ -69,6 +70,11 @@
           <span>Student input <span class="muted" id="char-count"></span></span>
           <textarea id="input" rows="4" maxlength="500" placeholder="Type a topic, for example: the moon"></textarea>
         </label>
+        <div class="audience">
+          <span class="field-label">Age group</span>
+          <div class="chips" id="audience-chips" role="group" aria-label="Age group"></div>
+        </div>
+        <ul class="tips" id="tips" aria-label="Tips for asking a better question"></ul>
         <div class="meters" id="meters"></div>
         <p class="chip warn" id="chip-injection" hidden>Contains a rule-override phrase</p>
         <p class="muted small" id="compose-notes"></p>
@@ -112,6 +118,43 @@
 
   </main>
 
+  <!-- Prompt designer: builds a template from a few choices -->
+  <dialog class="creator glass" id="designer" aria-labelledby="designer-title">
+    <form id="designer-form" method="dialog">
+      <h2 id="designer-title">Prompt designer</h2>
+      <p class="muted small">Answer a few questions. The template is built for you, and you can edit it later.</p>
+      <label class="field">
+        <span>What should the AI do?</span>
+        <input id="d-task" type="text" maxlength="240" placeholder="for example: explain a science idea">
+      </label>
+      <label class="field">
+        <span>Answer format</span>
+        <select id="d-format"></select>
+      </label>
+      <label class="field">
+        <span>Tone</span>
+        <select id="d-tone"></select>
+      </label>
+      <label class="field">
+        <span>Length</span>
+        <select id="d-length"></select>
+      </label>
+      <label class="field">
+        <span>Extra rules (optional)</span>
+        <input id="d-rules" type="text" maxlength="200" placeholder="for example: no scary words">
+      </label>
+      <div class="field">
+        <span>Preview</span>
+        <pre class="template-detail" id="d-preview" aria-live="polite"></pre>
+      </div>
+      <p class="error" id="designer-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" id="designer-cancel">Cancel</button>
+        <button type="submit" class="btn neon">Use this template</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Template creator -->
   <dialog class="creator glass" id="creator" aria-labelledby="creator-title">
     <form id="creator-form" method="dialog">
@@ -154,6 +197,8 @@
   <script src="js/core/provider.js"></script>
   <script src="js/core/log.js"></script>
   <script src="js/core/tools.js"></script>
+  <script src="js/core/designer.js"></script>
+  <script src="js/core/tips.js"></script>
   <script src="js/ui/viewer.js"></script>
   <script src="js/app.js"></script>
 </body>

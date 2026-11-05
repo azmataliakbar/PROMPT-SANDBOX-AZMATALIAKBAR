@@ -31,7 +31,8 @@
       else opts.signal.addEventListener("abort", onOuterAbort);
     }
 
-    var text = Sandbox.simulator.generate(payload.template, topic, Sandbox.prompt.injectionHits(topic) > 0);
+    var text = Sandbox.simulator.generate(payload.template, topic,
+      Sandbox.prompt.injectionHits(topic) > 0, payload.audience);
     return Sandbox.simulator.stream(text, opts.onChunk, internal.signal).then(function (full) {
       clearTimeout(timer);
       if (opts.signal) opts.signal.removeEventListener("abort", onOuterAbort);

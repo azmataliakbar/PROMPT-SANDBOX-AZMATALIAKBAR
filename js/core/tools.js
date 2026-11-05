@@ -109,27 +109,35 @@
     });
 
     registry.register("prompt.build", {
-      description: "Role-separated payload and metrics for a template and input",
-      input: { templateId: { type: "string", required: true }, input: { type: "string", required: true } },
+      description: "Role-separated payload and metrics for a template, input and age group",
+      input: {
+        templateId: { type: "string", required: true },
+        input: { type: "string", required: true },
+        audience: { type: "string" }
+      },
       run: function (a) {
         var t = T.get(a.templateId);
         if (!t) throw new Error("Template not found");
         var clean = ctx.prompt.checkInput(a.input).text;
         return {
-          payload: ctx.prompt.buildPayload(t, clean),
-          metrics: ctx.prompt.metrics(t, clean)
+          payload: ctx.prompt.buildPayload(t, clean, a.audience),
+          metrics: ctx.prompt.metrics(t, clean, a.audience)
         };
       }
     });
 
     registry.register("prompt.run", {
       description: "Run a prompt through the provider (simulated)",
-      input: { templateId: { type: "string", required: true }, input: { type: "string", required: true } },
+      input: {
+        templateId: { type: "string", required: true },
+        input: { type: "string", required: true },
+        audience: { type: "string" }
+      },
       run: function (a) {
         var t = T.get(a.templateId);
         if (!t) throw new Error("Template not found");
         var clean = ctx.prompt.checkInput(a.input).text;
-        var payload = ctx.prompt.buildPayload(t, clean);
+        var payload = ctx.prompt.buildPayload(t, clean, a.audience);
         return ctx.provider.run(payload, { signal: a.signal, onChunk: a.onChunk }).then(function (result) {
           ctx.log.add({ template: t.name, status: "ok", ms: result.ms, simulated: true, preview: result.text.slice(0, 80) });
           return result;
@@ -142,6 +150,24 @@
           throw err;
         });
       }
+    });
+
+    registry.register("designer.build", {
+      description: "Build a template from the prompt designer's choices (not saved yet)",
+      input: {
+        task: { type: "string", required: true },
+        format: { type: "string", required: true },
+        tone: { type: "string" },
+        length: { type: "string" },
+        rules: { type: "string" }
+      },
+      run: function (a) { return Sandbox.designer.build(a); }
+    });
+
+    registry.register("tips.analyze", {
+      description: "Friendly tips for a student's question",
+      input: { text: { type: "string", required: true } },
+      run: function (a) { return Sandbox.tips.analyze(a.text); }
     });
 
     registry.register("log.list", {

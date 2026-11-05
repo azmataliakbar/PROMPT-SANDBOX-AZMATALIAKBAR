@@ -18,7 +18,8 @@
     status: "idle",      // idle | running | ok | error
     output: "",
     message: "",         // one-line status under the run button
-    editingId: null
+    editingId: null,
+    audience: cfg.defaultAudience
   };
 
   var library = Sandbox.templates.create({ namespace: cfg.namespace, max: cfg.customTemplatesMax });
@@ -62,7 +63,9 @@
   function renderCompose() {
     var t = current();
     var clean = Sandbox.prompt.checkInput(state.input);
-    var m = Sandbox.prompt.metrics(t, clean.text);
+    var m = Sandbox.prompt.metrics(t, clean.text, state.audience);
+    renderAudience();
+    renderTips();
 
     V.renderMeters($("meters"), m);
     $("token-count").textContent = "~" + m.tokens + " tokens";
@@ -90,8 +93,8 @@
   function renderPreview() {
     var t = current();
     var clean = Sandbox.prompt.checkInput(state.input).text;
-    var payload = Sandbox.prompt.buildPayload(t, clean);
-    var m = Sandbox.prompt.metrics(t, clean);
+    var payload = Sandbox.prompt.buildPayload(t, clean, state.audience);
+    var m = Sandbox.prompt.metrics(t, clean, state.audience);
     V.renderTemplate($("viewer-template"), t, clean);
     V.renderMatrix($("matrix-body"), payload, m);
     $("viewer-note").textContent = clean
@@ -127,6 +130,99 @@
     renderLog();
   }
 
+  // ---------- Age groups and question tips ----------
+  function buildAudienceChips() {
+    var box = $("audience-chips");
+    box.textContent = "";
+    cfg.audiences.forEach(function (a) {
+      var b = V.el("button", "chip-btn", a.label);
+      b.type = "button";
+      b.setAttribute("data-audience", a.id);
+      b.addEventListener("click", function () {
+        state.audience = a.id;
+        renderAll();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function renderAudience() {
+    document.querySelectorAll("[data-audience]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-audience") === state.audience));
+    });
+  }
+
+  function renderTips() {
+    var box = $("tips");
+    box.textContent = "";
+    var tips = state.input.trim() ? Sandbox.tips.analyze(state.input)
+      : [{ kind: "tip", text: "Type a question to get tips for asking it well." }];
+    tips.forEach(function (t) {
+      box.appendChild(V.el("li", t.kind === "good" ? "tip good" : "tip", t.text));
+    });
+  }
+
+  // ---------- Prompt designer ----------
+  var designer = $("designer");
+
+  function fillSelect(id, options) {
+    var sel = $(id);
+    sel.textContent = "";
+    Object.keys(options).forEach(function (k) {
+      var o = document.createElement("option");
+      o.value = k;
+      o.textContent = options[k].label;
+      sel.appendChild(o);
+    });
+  }
+
+  function designerSpec() {
+    return {
+      task: $("d-task").value,
+      format: $("d-format").value,
+      tone: $("d-tone").value,
+      length: $("d-length").value,
+      rules: $("d-rules").value
+    };
+  }
+
+  function refreshDesigner() {
+    registry.call("designer.build", designerSpec()).then(function (built) {
+      $("d-preview").textContent = built.template;
+    }, function () {
+      $("d-preview").textContent = "Fill in the task to see the template.";
+    });
+  }
+
+  $("open-designer").addEventListener("click", function () {
+    fillSelect("d-format", Sandbox.designer.FORMATS);
+    fillSelect("d-tone", Sandbox.designer.TONES);
+    fillSelect("d-length", Sandbox.designer.LENGTHS);
+    $("d-task").value = "";
+    $("d-rules").value = "";
+    $("designer-error").textContent = "";
+    refreshDesigner();
+    designer.showModal();
+    $("d-task").focus();
+  });
+
+  $("designer-form").addEventListener("input", refreshDesigner);
+  $("designer-form").addEventListener("change", refreshDesigner);
+  $("designer-cancel").addEventListener("click", function () { designer.close(); });
+
+  $("designer-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    registry.call("designer.build", designerSpec())
+      .then(function (built) { return registry.call("templates.save", built); })
+      .then(function (saved) {
+        state.selected = saved.id;
+        designer.close();
+        renderAll();
+      }, function (err) {
+        $("designer-error").textContent = err.message;
+      });
+  });
+
   // ---------- Run ----------
   function runPrompt() {
     if (state.running) return;
@@ -143,6 +239,7 @@
     registry.call("prompt.run", {
       templateId: current().id,
       input: state.input,
+      audience: state.audience,
       signal: state.controller.signal,
       onChunk: function (chunk) {
         state.output += chunk;
@@ -315,5 +412,6 @@
 
   // ---------- Start ----------
   $("mode-badge").textContent = "Simulated model · nothing leaves this browser";
+  buildAudienceChips();
   renderAll();
 })();

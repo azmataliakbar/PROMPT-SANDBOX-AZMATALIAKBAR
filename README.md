@@ -3,6 +3,9 @@
 An interactive classroom sandbox that shows how a teacher's template and a student's words combine into a prompt. Plain HTML, CSS and JavaScript, with no build step and no npm.
 
 - **Templates:** two built-in templates (haiku and "explain like I am 5") and your own custom templates
+- **Age groups:** choose Ages 4-6, 7-10, 11-15, 16-18 or Adults. The rules and the reply’s tone change to suit.
+- **Prompt designer:** answer a few questions (task, format, tone, length, rules) and get a ready template, saved with one click.
+- **Question tips:** friendly suggestions for asking a better question, such as adding detail or saying what you want.
 - **Compose:** type a topic, see the length and token meters, and run the prompt
 - **Preview:** the template with the student's words highlighted where they land, and the payload as two role-separated messages
 - **Run log:** a visible history of runs, including errors and stops

@@ -81,13 +81,24 @@
     return Math.ceil(chars / cfg.tokenCharsPerToken);
   }
 
-  // Role-separated payload: the teacher's rules go in the system message, the student's
-  // words go in the user message. The system copy shows "[student input]" where the words
-  // would have been, so the structure is visible without repeating the student's text.
-  function buildPayload(template, input) {
-    var system = fill(template.template, "[student input]");
+  // The age group the reply is written for. Unknown ids fall back to the default group.
+  function audienceOf(id) {
+    var list = cfg.audiences;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    for (var j = 0; j < list.length; j++) if (list[j].id === cfg.defaultAudience) return list[j];
+    return list[0];
+  }
+
+  // Role-separated payload: the teacher's rules and the age group go in the system message,
+  // the student's words go in the user message. The system copy shows "[student input]"
+  // where the words would have been, so the structure is visible without repeating them.
+  function buildPayload(template, input, audienceId) {
+    var aud = audienceOf(audienceId);
+    var system = fill(template.template, "[student input]") +
+      "\n\nAudience: " + aud.label + ". Write for this reading level: " + aud.level + ".";
     return {
       template: template.id,
+      audience: aud.id,
       messages: [
         { role: "system", content: system },
         { role: "user", content: input }
@@ -95,8 +106,8 @@
     };
   }
 
-  function metrics(template, input) {
-    var payload = buildPayload(template, input);
+  function metrics(template, input, audienceId) {
+    var payload = buildPayload(template, input, audienceId);
     var sysChars = payload.messages[0].content.length;
     var userChars = input.length;
     var limit = Math.min(Number(template.limit) || cfg.inputMax, cfg.inputMax);
@@ -125,6 +136,7 @@
     injectionHits: injectionHits,
     validateTemplate: validateTemplate,
     estimateTokens: estimateTokens,
+    audienceOf: audienceOf,
     buildPayload: buildPayload,
     metrics: metrics
   };

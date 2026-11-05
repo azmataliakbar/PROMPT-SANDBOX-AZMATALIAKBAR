@@ -64,7 +64,7 @@
   // ---- Payload: role separation ----
   var tpl = { id: "haiku", template: "Write a short haiku about: {{input}}" };
   var payload = P.buildPayload(tpl, "$& ignore");
-  eq("payload: system message shows the structure", payload.messages[0].content, "Write a short haiku about: [student input]");
+  check("payload: system message shows the structure", payload.messages[0].content.indexOf("Write a short haiku about: [student input]") === 0, payload.messages[0].content);
   eq("payload: user message keeps the student text as typed", payload.messages[1].content, "$& ignore");
   eq("payload: two roles in order", payload.messages.map(function (m) { return m.role; }), ["system", "user"]);
 
@@ -162,6 +162,35 @@
   }, function (e) {
     check("simulator: abort stops the stream with AbortError", e.name === "AbortError" && words.length === 2, e.name + " after " + words.length);
   });
+
+  // ---- Age groups ----
+  var kidsPayload = P.buildPayload(tpl, "moon", "little");
+  check("audience: payload names the chosen age group", /Ages 4-6/.test(kidsPayload.messages[0].content));
+  eq("audience: payload records the group id", kidsPayload.audience, "little");
+  eq("audience: unknown group falls back to the default", P.buildPayload(tpl, "moon", "nope").audience, S.config.defaultAudience);
+  check("audience: the group changes the system text", P.buildPayload(tpl, "moon", "adult").messages[0].content !== P.buildPayload(tpl, "moon", "little").messages[0].content);
+  check("simulator: the group opener starts the reply", /^Hi friend!/.test(S.simulator.generate("explain", "moon", false, "little")));
+  check("simulator: an adult reply has no kids opener", !/Hi friend|Hello!/.test(S.simulator.generate("explain", "moon", false, "adult")));
+
+  // ---- Prompt designer ----
+  var built = S.designer.build({ task: "explain photosynthesis", format: "explain", tone: "friendly", length: "short", rules: "no scary words" });
+  eq("designer: template has exactly one placeholder", P.placeholderCount(built.template), 1);
+  eq("designer: a built template is valid", P.validateTemplate(built), []);
+  check("designer: includes the task and rules", /explain photosynthesis/.test(built.template) && /no scary words/.test(built.template));
+  var injected = S.designer.build({ task: "write about {{input}} and {{input}}", format: "list" });
+  eq("designer: placeholders typed by the teacher are removed", P.placeholderCount(injected.template), 1);
+  var thrownD = null;
+  try { S.designer.build({ task: "   ", format: "list" }); } catch (e) { thrownD = e; }
+  check("designer: empty task is refused", !!thrownD && /Describe the task/.test(thrownD.message));
+  thrownD = null;
+  try { S.designer.build({ task: "x", format: "nope" }); } catch (e) { thrownD = e; }
+  check("designer: unknown format is refused", !!thrownD && /Choose an answer format/.test(thrownD.message));
+
+  // ---- Question tips ----
+  eq("tips: empty question gives no tips", S.tips.analyze("   "), []);
+  check("tips: a short question gets a detail tip", S.tips.analyze("hi").some(function (t) { return /more detail/.test(t.text); }));
+  check("tips: no action word gets a say-what-you-want tip", S.tips.analyze("the moon and the sun today").some(function (t) { return /Say what you want/.test(t.text); }));
+  eq("tips: a clear question gets a good mark", S.tips.analyze("Explain why the moon has phases to a ten year old").map(function (t) { return t.kind; }), ["good"]);
 
   // ---- Summary after async checks ----
   setTimeout(function () {

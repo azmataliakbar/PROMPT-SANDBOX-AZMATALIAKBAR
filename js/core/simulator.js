@@ -12,8 +12,11 @@
   }
 
   // topic: the student's cleaned input. rulesKept: true when an override phrase was found.
-  function generate(templateId, topic, rulesKept) {
+  // audienceId: the age group. Its opener sets the tone of the reply.
+  function generate(templateId, topic, rulesKept, audienceId) {
     var t = topic || "this";
+    var opener = "";
+    cfg.audiences.forEach(function (a) { if (a.id === audienceId) opener = a.opener; });
     var body;
     if (templateId === "haiku") {
       body = [cap(t) + " at first light,", "soft words drift past the window", "and the page is quiet."].join("\n");
@@ -24,6 +27,7 @@
       body = "Here is a simple take on " + t + ": it has a few clear parts that work together, " +
         "and you can learn them one step at a time.";
     }
+    body = opener + body;
     return rulesKept ? "I will keep to the task. " + body : body;
   }
 
